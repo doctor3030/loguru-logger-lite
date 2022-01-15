@@ -12,7 +12,6 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
+    packages=find_packages(),
     python_requires=">=3.8",
 )
