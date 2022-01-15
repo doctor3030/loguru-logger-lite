@@ -15,7 +15,7 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-from logger import Logger, Sinks
+from loguru_logger.logger import Logger, Sinks
 
 __all__ = [
     'Logger', 'Sinks',
