@@ -14,4 +14,10 @@ setup(
     ],
     packages=find_packages(),
     python_requires=">=3.8",
+    install_requires=[
+        "setuptools>=57",
+        "wheel",
+        "loguru~=0.5.3",
+        "kafka-python~=2.0.2"
+    ]
 )
