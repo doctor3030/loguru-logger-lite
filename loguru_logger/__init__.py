@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 __title__ = 'loguru-logger'
 __author__ = 'Dmitry Amanov'
-__license__ = 'Apache License 2.0'
 __copyright__ = 'Copyright 2022 Dmitry Amanov'
 
 # Set default logging handler to avoid "No handler found" warnings.
