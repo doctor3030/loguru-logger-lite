@@ -39,7 +39,7 @@ class Logger:
     DEFAULT_FORMAT = {
         'stdout_format': "MODULE: <yellow>{module}</yellow> | COMPONENT: <yellow>{name}</yellow> | PID: {process} | <green>{level}</green> | {time} | <cyan>{message}</cyan>",
         'stderr_format': "<blink>MODULE:</blink> <yellow>{module}</yellow> <blink>| COMPONENT:</blink> <yellow>{name}</yellow> <blink>| PID: {process} |</blink> {level} <blink>| {time} |</blink> {message}",
-        'plain_format': "MODULE: {module} | COMPONENT: {name} | SERVICE_PID: {process} | SERVICE_ID: {extra[service_id]} | {level} | {time} | {message}"
+        'plain_format': "MODULE: {module} | COMPONENT: {name} | PID: {process} | {level} | {time} | {message}"
     }
 
     def __init__(self, **kwargs):
