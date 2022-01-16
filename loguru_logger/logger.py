@@ -3,6 +3,7 @@ from kafka import KafkaProducer
 import json
 import sys
 import enum
+from typing import List
 
 
 class Sinks(enum.Enum):
@@ -78,7 +79,7 @@ class Logger:
                    level='ERROR')
         return logger
 
-    def get_logger(self, sinks: Sinks, **kwargs) -> logger:
+    def get_logger(self, sinks: List[Sinks], **kwargs) -> logger:
         """
         Method to get logger with custom sinks.
 
