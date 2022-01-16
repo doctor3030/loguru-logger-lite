@@ -10,6 +10,7 @@ class Sinks(enum.Enum):
     STDOUT = 'stdout'
     STDERR = 'stderr'
     KAFKA = 'kafka'
+    FILE = 'file'
 
 
 def _filter_stdout(msg) -> bool:
@@ -102,15 +103,15 @@ class Logger:
         """
 
         logger.remove()
-        if 'stdout' in sinks:
+        if Sinks.STDOUT in sinks:
             logger.add(sys.stdout,
                        format=self.stdout_format,
                        level='INFO', filter=_filter_stdout)
-        if 'stderr' in sinks:
+        if Sinks.STDERR in sinks:
             logger.add(sys.stderr,
                        format=self.stderr_format,
                        level='ERROR')
-        if 'kafka' in sinks:
+        if Sinks.KAFKA in sinks:
             kafka_bootstrap_servers = kwargs.get('kafka_bootstrap_servers')
             kafka_sink_topic = kwargs.get('kafka_sink_topic')
 
@@ -125,7 +126,7 @@ class Logger:
                        format=self.plain_format,
                        level='INFO', serialize=True)
 
-        if 'file' in sinks:
+        if Sinks.FILE in sinks:
             path = kwargs.get('path')
             rotation = kwargs.get('rotation')
             retention = kwargs.get('retention')
