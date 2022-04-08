@@ -1,9 +1,16 @@
+import json
+
 from loguru import logger
 from kafka import KafkaProducer
-import json
+import pydantic
 import sys
 import enum
-from typing import List
+from typing import List, Optional, Union, Dict, Callable, TypedDict, TextIO, Awaitable
+from datetime import time, timedelta
+
+
+class Message(str):
+    record: TypedDict
 
 
 class Sinks(enum.Enum):
@@ -13,136 +20,210 @@ class Sinks(enum.Enum):
     FILE = 'file'
 
 
-def _filter_stdout(msg) -> bool:
-    if msg['level'].no > 30:
-        return False
-    else:
-        return True
+class LogLevels(enum.Enum):
+    TRACE = 5
+    DEBUG = 10
+    INFO = 20
+    SUCCESS = 25
+    WARNING = 30
+    ERROR = 40
+    CRITICAL = 50
+
+
+class DEFAULT_FORMAT(enum.Enum):
+    STDOUT_FORMAT = "MODULE: <yellow>{module}</yellow> | COMPONENT: <yellow>{name}</yellow> | " \
+                    "PID: {process} | <level>{level}</level> | {time} | <level>{message}</level>",
+    STDERR_FORMAT = "<blink>MODULE:</blink> <yellow>{module}</yellow> <blink>| " \
+                    "COMPONENT:</blink> <yellow>{name}</yellow> <blink>| PID: {process} |" \
+                    "</blink> <level>{level}</level> <blink>| {time} |</blink> <level>{message}</level>",
+    PLAIN_FORMAT = "MODULE: {module} | COMPONENT: {name} | PID: {process} | {level} | {time} | {message}"
+
+
+class BaseSinkOptions(pydantic.BaseModel):
+    level: LogLevels
+    format: Optional[str]
+    filter: Optional[Union[str, Callable[[TypedDict], bool], Dict[Union[str, None], Union[str, int, bool]]]]
+    colorize: Optional[bool]
+    serialize: Optional[bool]
+    backtrace: Optional[bool]
+    diagnose: Optional[bool]
+    enqueue: Optional[bool]
+    catch: Optional[bool]
+
+
+class KafkaSinkOptions(BaseSinkOptions):
+    bootstrap_servers: List[str]
+    producer_config: Optional[Dict]
+    sink_topic: str
+
+
+class FileSinkOptions(BaseSinkOptions):
+    path: str
+    rotation: Optional[Union[str, int, time, timedelta, Callable[[Message, TextIO], bool]]]
+    retention: Optional[Union[str, int, timedelta, Callable[[List[str]], None]]]
+    compression: Optional[Union[str, Callable[[str], None]]]
+    delay: Optional[bool]
+    mode: Optional[str]
+    buffering: Optional[int]
+    encoding: Optional[str]
+
+
+class Sink(pydantic.BaseModel):
+    name: Sinks
+    opts: Union[BaseSinkOptions, KafkaSinkOptions, FileSinkOptions]
+    sink: Optional[Union[Callable[[Message], Awaitable[None]], str, Callable[[Message], None]]]
 
 
 class Logger:
-    """
-    Simple wrapper for loguru logger with kafka sink.
 
-        Attributes
-            DEFAULT_FORMAT : dict
-                Formatted string representation for 'stdout_format', 'stderr_format' and 'plain_format'.
-                'stdout_format' and 'stderr_format' are colorized while 'plain_format' is not.
-            default_logger: loguru.logger
-                Default logger includes stdout and stderr sinks.
-
-        Methods
-            get_logger(sinks: Sinks, **kwargs) -> logger
-                Returns loguru logger with custom sinks.
-    """
-
-    DEFAULT_FORMAT = {
-        'stdout_format': "MODULE: <yellow>{module}</yellow> | COMPONENT: <yellow>{name}</yellow> | PID: {process} | <green>{level}</green> | {time} | <cyan>{message}</cyan>",
-        'stderr_format': "<blink>MODULE:</blink> <yellow>{module}</yellow> <blink>| COMPONENT:</blink> <yellow>{name}</yellow> <blink>| PID: {process} |</blink> <red>{level}</red> <blink>| {time} |</blink> <red>{message}</red>",
-        'plain_format': "MODULE: {module} | COMPONENT: {name} | PID: {process} | {level} | {time} | {message}"
-    }
-
-    def __init__(self, **kwargs):
-        self.stdout_format = self.DEFAULT_FORMAT['stdout_format']
-        self.stderr_format = self.DEFAULT_FORMAT['stderr_format']
-        self.plain_format = self.DEFAULT_FORMAT['plain_format']
-
+    def __init__(self, sinks: Optional[List[Sink]]):
         self.producer = None
         self.sink_topic = None
 
-        stdout_format = kwargs.get('stdout_format')
-        stderr_format = kwargs.get('stderr_format')
-        plain_format = kwargs.get('plain_format')
+        if sinks:
+            for sink in sinks:
+                if sink.name == Sinks.KAFKA:
+                    self.producer = Logger._get_producer(sink.opts.bootstrap_servers, sink.opts.producer_config)
+                    self.sink_topic = sink.opts.sink_topic
 
-        if stdout_format is not None:
-            self.stdout_format = stdout_format
-        if stderr_format is not None:
-            self.stderr_format = stderr_format
-        if plain_format is not None:
-            self.plain_format = plain_format
-
-        self.default_logger = self._get_default_logger()
-
-    def close(self):
-        if self.producer is not None:
+    def __del__(self):
+        if self.producer:
+            self.producer.flush()
             self.producer.close()
 
     def _log_kafka_sink(self, msg):
-        self.producer.send(self.sink_topic, value=json.loads(msg))
+        self.producer.send(self.sink_topic, value=msg.encode('utf-8'))
 
-    def _get_default_logger(self) -> logger:
+    @staticmethod
+    def _get_producer(bootstrap_servers: List[str], producer_config: Dict = None):
+        config = {
+            'bootstrap_servers': bootstrap_servers,
+            'value_serializer': lambda x: x,
+        }
+        if producer_config:
+            for key in producer_config.keys():
+                config[key] = producer_config.get(key)
+
+        return KafkaProducer(**config)
+
+    @staticmethod
+    def _filter_stdout(msg) -> bool:
+        if msg['level'].no > 30:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def get_default_logger() -> logger:
         logger.remove()
         logger.add(sys.stdout,
-                   format=self.stdout_format,
-                   level='INFO', filter=_filter_stdout)
+                   format=DEFAULT_FORMAT.STDOUT_FORMAT.value[0],
+                   level=LogLevels.TRACE.value, filter=Logger._filter_stdout)
         logger.add(sys.stderr,
-                   format=self.stderr_format,
-                   level='ERROR')
+                   format=DEFAULT_FORMAT.STDERR_FORMAT.value[0],
+                   level=LogLevels.ERROR.value)
         return logger
 
-    def get_logger(self, sinks: List[Sinks], **kwargs) -> logger:
-        """
-        Method to get logger with custom sinks.
+    @staticmethod
+    def get_logger(sinks: List[Sink]):
+        _logger = Logger(sinks)
+        return _logger._get_logger(sinks)
 
-        Args:
-            sinks : Logger sinks
-            **kwargs : Arguments
+    @staticmethod
+    def get_kafka_sink(options: KafkaSinkOptions):
+        _logger = Logger(None)
+        return _logger._get_kafka_sink(options)
 
-        Possible arguments:
-            kafka_bootstrap_servers: List[str] Kafka cluster bootstrap servers for 'kafka' sink.
-
-            kafka_sink_topic: str Topic name where to send logs for 'kafka' sink.
-
-            path: str Path to log-file for 'file' sink.
-
-            rotation: Rotation options for 'file' sink. See loguru docs.
-
-            retention: Retention options for 'file' sink. See loguru docs.
-
-        Returns: Loguru logger
-        """
-
+    def _get_logger(self, sinks: List[Sink]) -> logger:
         logger.remove()
-        if Sinks.STDOUT in sinks:
-            logger.add(sys.stdout,
-                       format=self.stdout_format,
-                       level='INFO', filter=_filter_stdout)
-        if Sinks.STDERR in sinks:
-            logger.add(sys.stderr,
-                       format=self.stderr_format,
-                       level='ERROR')
-        if Sinks.KAFKA in sinks:
-            kafka_bootstrap_servers = kwargs.get('kafka_bootstrap_servers')
-            kafka_sink_topic = kwargs.get('kafka_sink_topic')
 
-            assert kafka_bootstrap_servers is not None, 'Kafka sink requested but no bootstrap servers provided.'
-            assert kafka_sink_topic is not None, 'Kafka sink requested but sink topic provided.'
+        for sink in sinks:
+            sink_opts = sink.opts
+            if sink.name == Sinks.STDOUT:
+                logger.add(sys.stdout,
+                           level=sink_opts.level.value,
+                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.STDOUT_FORMAT.value[0]),
+                           filter=(sink_opts.filter if sink_opts.filter else None),
+                           colorize=(sink_opts.colorize if sink_opts.colorize else True),
+                           serialize=(sink_opts.serialize if sink_opts.serialize else False),
+                           backtrace=(sink_opts.backtrace if sink_opts.backtrace else False),
+                           diagnose=(sink_opts.diagnose if sink_opts.diagnose else False),
+                           enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
+                           catch=(sink_opts.catch if sink_opts.catch else False))
 
-            self.producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_servers,
-                                          value_serializer=lambda x: json.dumps(x).encode('utf-8'))
-            self.sink_topic = kafka_sink_topic
+            if sink.name == Sinks.STDERR:
+                logger.add(sys.stderr,
+                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.STDERR_FORMAT.value[0]),
+                           level=sink_opts.level.value,
+                           filter=(sink_opts.filter if sink_opts.filter else None),
+                           colorize=(sink_opts.colorize if sink_opts.colorize else True),
+                           serialize=(sink_opts.serialize if sink_opts.serialize else False),
+                           backtrace=(sink_opts.backtrace if sink_opts.backtrace else False),
+                           diagnose=(sink_opts.diagnose if sink_opts.diagnose else False),
+                           enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
+                           catch=(sink_opts.catch if sink_opts.catch else False))
 
-            logger.add(self._log_kafka_sink,
-                       format=self.plain_format,
-                       level='INFO', serialize=True)
+            if sink.name == Sinks.KAFKA:
+                logger.add(self._log_kafka_sink,
+                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+                           level=sink_opts.level.value,
+                           filter=(sink_opts.filter if sink_opts.filter else None),
+                           colorize=(sink_opts.colorize if sink_opts.colorize else False),
+                           serialize=(sink_opts.serialize if sink_opts.serialize else True),
+                           backtrace=(sink_opts.backtrace if sink_opts.backtrace else False),
+                           diagnose=(sink_opts.diagnose if sink_opts.diagnose else False),
+                           enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
+                           catch=(sink_opts.catch if sink_opts.catch else False))
 
-        if Sinks.FILE in sinks:
-            path = kwargs.get('path')
-            rotation = kwargs.get('rotation')
-            retention = kwargs.get('retention')
+            if sink.name == Sinks.FILE:
+                opts = {
+                    'format': (sink_opts.format if sink_opts.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+                    'level': sink_opts.level.value,
+                    'filter': (sink_opts.filter if sink_opts.filter else None),
+                    'colorize': (sink_opts.colorize if sink_opts.colorize else False),
+                    'serialize': (sink_opts.serialize if sink_opts.serialize else True),
+                    'backtrace': (sink_opts.backtrace if sink_opts.backtrace else False),
+                    'diagnose': (sink_opts.diagnose if sink_opts.diagnose else False),
+                    'enqueue': (sink_opts.enqueue if sink_opts.enqueue else False),
+                    'catch': (sink_opts.catch if sink_opts.catch else False)
+                }
 
-            assert path is not None, 'File sink requested but no path provided.'
+                if sink_opts.rotation:
+                    opts['rotation'] = sink_opts.rotation
+                if sink_opts.retention:
+                    opts['retention'] = sink_opts.retention
+                if sink_opts.compression:
+                    opts['compression'] = sink_opts.compression
+                if sink_opts.delay:
+                    opts['delay'] = sink_opts.delay
+                if sink_opts.mode:
+                    opts['mode'] = sink_opts.mode
+                if sink_opts.buffering:
+                    opts['buffering'] = sink_opts.buffering
+                if sink_opts.encoding:
+                    opts['encoding'] = sink_opts.encoding
 
-            _kwargs = {
-                'format': self.plain_format,
-                'level': 'INFO',
-                'serialize': True
-            }
-            if rotation is not None:
-                _kwargs['rotation'] = rotation
-            if retention is not None:
-                _kwargs['retention'] = retention
-
-            logger.add(path, **_kwargs)
+                logger.add(sink_opts.path, **opts)
 
         return logger
+
+    def _get_kafka_sink(self, options: KafkaSinkOptions):
+        self.producer = Logger._get_producer(options.bootstrap_servers, options.producer_config)
+        self.sink_topic = options.sink_topic
+        # _options = json.loads(options.json(exclude_unset=True))
+
+        opts = BaseSinkOptions(
+            format=(options.format if options.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+            level=options.level.value,
+            filter=(options.filter if options.filter else None),
+            colorize=(options.colorize if options.colorize else False),
+            serialize=(options.serialize if options.serialize else True),
+            backtrace=(options.backtrace if options.backtrace else False),
+            diagnose=(options.diagnose if options.diagnose else False),
+            enqueue=(options.enqueue if options.enqueue else False),
+            catch=(options.catch if options.catch else False)
+        )
+
+        return Sink(name=Sinks.KAFKA,
+                    sink=self._log_kafka_sink,
+                    opts=opts)

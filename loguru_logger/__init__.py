@@ -6,6 +6,7 @@ __copyright__ = 'Copyright 2022 Dmitry Amanov'
 
 # Set default logging handler to avoid "No handler found" warnings.
 import logging
+
 try:  # Python 2.7+
     from logging import NullHandler
 except ImportError:
@@ -15,8 +16,9 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-from loguru_logger.logger import Logger, Sinks
+from loguru_logger.logger import Logger, Sinks, LogLevels, \
+    Sink, BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 __all__ = [
-    'Logger', 'Sinks',
+    'Logger', 'Sinks', 'LogLevels', 'Sink', 'BaseSinkOptions', 'KafkaSinkOptions', 'FileSinkOptions'
 ]
