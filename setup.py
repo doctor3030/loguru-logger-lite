@@ -8,11 +8,11 @@ ROOOT = pathlib.Path(__file__).parent
 README = (ROOOT / "README.md").read_text()
 
 setup(
-    name='loguru-logger-lite',
+    name='loguru-loguru_logger_light-lite',
     version="0.0.1",
     author="Dmitry Amanov",
     author_email="",
-    description="Simple logger built on top of loguru to make a quick setup for basic logging",
+    description="Simple loguru_logger_light built on top of loguru to make a quick setup for basic logging",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/doctor3030/loguru-logger-lite",

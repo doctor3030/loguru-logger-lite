@@ -6,7 +6,7 @@ from kafka import KafkaConsumer
 from loguru import logger as loguru_base
 
 sys.path.append('../')
-from logger import Logger, LogLevels, Sink, Sinks, \
+from loguru_logger_light import Logger, LogLevels, Sink, Sinks, \
     BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 

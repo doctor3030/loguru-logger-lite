@@ -8,7 +8,7 @@ from kafka import KafkaConsumer
 
 sys.path.append('../')
 
-from logger import Logger, LogLevels, Sink, Sinks, \
+from loguru_logger_light import Logger, LogLevels, Sink, Sinks, \
     BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 
@@ -67,7 +67,7 @@ class TestLogger(TestCase):
             self.consumer.commit()
 
             if time.time() - start > 10:
-                # self.logger.info('Shutting down..')
+                # self.loguru_logger_light.info('Shutting down..')
                 self.consumer.close()
                 break
 
