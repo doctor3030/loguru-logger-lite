@@ -8,7 +8,7 @@ setup(
     description="loguru based logger with sink to kafka",
     long_description="",
     long_description_content_type="",
-    url="https://github.com/doctor3030/loguru-logger",
+    url="https://github.com/doctor3030/loguru-logger-lite",
     classifiers=[
         "Programming Language :: Python :: 3",
     ],

@@ -74,7 +74,7 @@ The kafka sink, along with the basic loguru options, has additional parameters f
 - producer_config - kafka producer configuration (see [python-kafka documentation](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html)).
 - sink_topic - a kafka topic name where to send log messages.
 
-## get_kafka_sink(options) method
+### get_kafka_sink(options) method
 
 The **kafka** sink can be used standalone with existing loguru logger:
 ```python
