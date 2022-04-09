@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-__title__ = 'loguru-logger'
+__title__ = 'loguru-logger-lite'
 __author__ = 'Dmitry Amanov'
 __copyright__ = 'Copyright 2022 Dmitry Amanov'
 
@@ -16,7 +16,7 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-from loguru_logger.logger import Logger, Sinks, LogLevels, \
+from logger.logger import Logger, Sinks, LogLevels, \
     Sink, BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 __all__ = [

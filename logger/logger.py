@@ -1,5 +1,3 @@
-import json
-
 from loguru import logger
 from kafka import KafkaProducer
 import pydantic
@@ -7,6 +5,7 @@ import sys
 import enum
 from typing import List, Optional, Union, Dict, Callable, TypedDict, TextIO, Awaitable
 from datetime import time, timedelta
+from logging import Handler
 
 
 class Message(str):
@@ -30,10 +29,10 @@ class LogLevels(enum.Enum):
     CRITICAL = 50
 
 
-class DEFAULT_FORMAT(enum.Enum):
-    STDOUT_FORMAT = "MODULE: <yellow>{module}</yellow> | COMPONENT: <yellow>{name}</yellow> | " \
+class DefaultFormats(enum.Enum):
+    STDOUT_FORMAT = "MODULE: <green>{module}</green> | COMPONENT: <yellow>{name}</yellow> | " \
                     "PID: {process} | <level>{level}</level> | {time} | <level>{message}</level>",
-    STDERR_FORMAT = "<blink>MODULE:</blink> <yellow>{module}</yellow> <blink>| " \
+    STDERR_FORMAT = "<blink>MODULE:</blink> <green>{module}</green> <blink>| " \
                     "COMPONENT:</blink> <yellow>{name}</yellow> <blink>| PID: {process} |" \
                     "</blink> <level>{level}</level> <blink>| {time} |</blink> <level>{message}</level>",
     PLAIN_FORMAT = "MODULE: {module} | COMPONENT: {name} | PID: {process} | {level} | {time} | {message}"
@@ -71,7 +70,10 @@ class FileSinkOptions(BaseSinkOptions):
 class Sink(pydantic.BaseModel):
     name: Sinks
     opts: Union[BaseSinkOptions, KafkaSinkOptions, FileSinkOptions]
-    sink: Optional[Union[Callable[[Message], Awaitable[None]], str, Callable[[Message], None]]]
+    sink: Optional[Union[TextIO, Callable[[Message], None], Handler, Callable[[Message], Awaitable[None]], str]]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class Logger:
@@ -117,10 +119,10 @@ class Logger:
     def get_default_logger() -> logger:
         logger.remove()
         logger.add(sys.stdout,
-                   format=DEFAULT_FORMAT.STDOUT_FORMAT.value[0],
+                   format=DefaultFormats.STDOUT_FORMAT.value[0],
                    level=LogLevels.TRACE.value, filter=Logger._filter_stdout)
         logger.add(sys.stderr,
-                   format=DEFAULT_FORMAT.STDERR_FORMAT.value[0],
+                   format=DefaultFormats.STDERR_FORMAT.value[0],
                    level=LogLevels.ERROR.value)
         return logger
 
@@ -142,7 +144,7 @@ class Logger:
             if sink.name == Sinks.STDOUT:
                 logger.add(sys.stdout,
                            level=sink_opts.level.value,
-                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.STDOUT_FORMAT.value[0]),
+                           format=(sink_opts.format if sink_opts.format else DefaultFormats.STDOUT_FORMAT.value[0]),
                            filter=(sink_opts.filter if sink_opts.filter else None),
                            colorize=(sink_opts.colorize if sink_opts.colorize else True),
                            serialize=(sink_opts.serialize if sink_opts.serialize else False),
@@ -153,7 +155,7 @@ class Logger:
 
             if sink.name == Sinks.STDERR:
                 logger.add(sys.stderr,
-                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.STDERR_FORMAT.value[0]),
+                           format=(sink_opts.format if sink_opts.format else DefaultFormats.STDERR_FORMAT.value[0]),
                            level=sink_opts.level.value,
                            filter=(sink_opts.filter if sink_opts.filter else None),
                            colorize=(sink_opts.colorize if sink_opts.colorize else True),
@@ -165,7 +167,7 @@ class Logger:
 
             if sink.name == Sinks.KAFKA:
                 logger.add(self._log_kafka_sink,
-                           format=(sink_opts.format if sink_opts.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+                           format=(sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value),
                            level=sink_opts.level.value,
                            filter=(sink_opts.filter if sink_opts.filter else None),
                            colorize=(sink_opts.colorize if sink_opts.colorize else False),
@@ -175,9 +177,9 @@ class Logger:
                            enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
                            catch=(sink_opts.catch if sink_opts.catch else False))
 
-            if sink.name == Sinks.FILE:
+            if sink.name == Sinks.FILE.value:
                 opts = {
-                    'format': (sink_opts.format if sink_opts.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+                    'format': (sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value),
                     'level': sink_opts.level.value,
                     'filter': (sink_opts.filter if sink_opts.filter else None),
                     'colorize': (sink_opts.colorize if sink_opts.colorize else False),
@@ -210,10 +212,9 @@ class Logger:
     def _get_kafka_sink(self, options: KafkaSinkOptions):
         self.producer = Logger._get_producer(options.bootstrap_servers, options.producer_config)
         self.sink_topic = options.sink_topic
-        # _options = json.loads(options.json(exclude_unset=True))
 
         opts = BaseSinkOptions(
-            format=(options.format if options.format else DEFAULT_FORMAT.PLAIN_FORMAT.value),
+            format=(options.format if options.format else DefaultFormats.PLAIN_FORMAT.value),
             level=options.level.value,
             filter=(options.filter if options.filter else None),
             colorize=(options.colorize if options.colorize else False),

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='loguru-logger',
+    name='loguru-logger-lite',
     version="0.0.1",
     author="Dmitry Amanov",
     author_email="",

@@ -6,11 +6,14 @@ from kafka import KafkaConsumer
 from loguru import logger as loguru_base
 
 sys.path.append('../')
-from loguru_logger import Logger, LogLevels, Sink, Sinks, \
+from logger import Logger, LogLevels, Sink, Sinks, \
     BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 
 class TestLogger(TestCase):
+
+    # kafka_bootstrap_servers = ['10.0.0.74:9092']
+    kafka_bootstrap_servers = ['192.168.2.190:9092']
 
     def test_default_logger(self):
         print('\nTESTING DEFAULT LOGGER')
@@ -58,8 +61,7 @@ class TestLogger(TestCase):
         print('\nTESTING KAFKA LOGGER')
 
         consumer_config = {
-            'bootstrap_servers': ['10.0.0.74:9092'],
-            # 'bootstrap_servers': ['192.168.2.190:9092'],
+            'bootstrap_servers': self.kafka_bootstrap_servers,
             'group_id': 'test_group',
             'auto_offset_reset': 'earliest',
             'enable_auto_commit': False,
@@ -106,8 +108,7 @@ class TestLogger(TestCase):
         print('\nTESTING KAFKA SINK STANDALONE')
 
         consumer_config = {
-            'bootstrap_servers': ['10.0.0.74:9092'],
-            # 'bootstrap_servers': ['192.168.2.190:9092'],
+            'bootstrap_servers': self.kafka_bootstrap_servers,
             'group_id': 'test_group',
             'auto_offset_reset': 'earliest',
             'enable_auto_commit': False,
