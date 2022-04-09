@@ -16,8 +16,7 @@ except ImportError:
 
 logging.getLogger(__name__).addHandler(NullHandler())
 
-from logger.logger import Logger, Sinks, LogLevels, \
-    Sink, BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
+from logger.logger import Logger, Sinks, LogLevels, Sink, BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 __all__ = [
     'Logger', 'Sinks', 'LogLevels', 'Sink', 'BaseSinkOptions', 'KafkaSinkOptions', 'FileSinkOptions'
