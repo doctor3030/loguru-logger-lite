@@ -8,7 +8,7 @@ ROOOT = pathlib.Path(__file__).parent
 README = (ROOOT / "README.md").read_text()
 
 setup(
-    name='loguru-loguru_logger_lite',
+    name='loguru_logger_lite',
     version="0.0.2",
     author="Dmitry Amanov",
     author_email="",
@@ -18,7 +18,7 @@ setup(
     url="https://github.com/doctor3030/loguru-logger-lite",
     license="MIT",
     classifiers=[
-        "License :: OSI Approved :: MIT License"
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
     ],
     packages=find_packages(),
