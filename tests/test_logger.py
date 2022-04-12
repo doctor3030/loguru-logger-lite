@@ -12,8 +12,8 @@ from loguru_logger_lite import Logger, LogLevels, Sink, Sinks, \
 
 class TestLogger(TestCase):
 
-    # kafka_bootstrap_servers = ['10.0.0.74:9092']
-    kafka_bootstrap_servers = ['192.168.2.190:9092']
+    kafka_bootstrap_servers = ['10.0.0.74:9092']
+    # kafka_bootstrap_servers = ['192.168.2.190:9092']
 
     def test_default_logger(self):
         print('\nTESTING DEFAULT LOGGER')

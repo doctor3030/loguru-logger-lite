@@ -154,40 +154,44 @@ class Logger:
                            catch=(sink_opts.catch if sink_opts.catch else False))
 
             if sink.name == Sinks.STDERR:
-                logger.add(sys.stderr,
-                           format=(sink_opts.format if sink_opts.format else DefaultFormats.STDERR_FORMAT.value[0]),
-                           level=sink_opts.level.value,
-                           filter=(sink_opts.filter if sink_opts.filter else None),
-                           colorize=(sink_opts.colorize if sink_opts.colorize else True),
-                           serialize=(sink_opts.serialize if sink_opts.serialize else False),
-                           backtrace=(sink_opts.backtrace if sink_opts.backtrace else False),
-                           diagnose=(sink_opts.diagnose if sink_opts.diagnose else False),
-                           enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
-                           catch=(sink_opts.catch if sink_opts.catch else False))
+                logger.add(
+                    sys.stderr,
+                    format=sink_opts.format if sink_opts.format else DefaultFormats.STDERR_FORMAT.value[0],
+                    level=sink_opts.level.value,
+                    filter=sink_opts.filter if sink_opts.filter else None,
+                    colorize=sink_opts.colorize if sink_opts.colorize else True,
+                    serialize=sink_opts.serialize if sink_opts.serialize else False,
+                    backtrace=sink_opts.backtrace if sink_opts.backtrace else False,
+                    diagnose=sink_opts.diagnose if sink_opts.diagnose else False,
+                    enqueue=sink_opts.enqueue if sink_opts.enqueue else False,
+                    catch=sink_opts.catch if sink_opts.catch else False
+                )
 
             if sink.name == Sinks.KAFKA:
-                logger.add(self._log_kafka_sink,
-                           format=(sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value),
-                           level=sink_opts.level.value,
-                           filter=(sink_opts.filter if sink_opts.filter else None),
-                           colorize=(sink_opts.colorize if sink_opts.colorize else False),
-                           serialize=(sink_opts.serialize if sink_opts.serialize else True),
-                           backtrace=(sink_opts.backtrace if sink_opts.backtrace else False),
-                           diagnose=(sink_opts.diagnose if sink_opts.diagnose else False),
-                           enqueue=(sink_opts.enqueue if sink_opts.enqueue else False),
-                           catch=(sink_opts.catch if sink_opts.catch else False))
+                logger.add(
+                    self._log_kafka_sink,
+                    format=sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value,
+                    level=sink_opts.level.value,
+                    filter=sink_opts.filter if sink_opts.filter else None,
+                    colorize=sink_opts.colorize if sink_opts.colorize else False,
+                    serialize=sink_opts.serialize if sink_opts.serialize else True,
+                    backtrace=sink_opts.backtrace if sink_opts.backtrace else False,
+                    diagnose=sink_opts.diagnose if sink_opts.diagnose else False,
+                    enqueue=sink_opts.enqueue if sink_opts.enqueue else False,
+                    catch=sink_opts.catch if sink_opts.catch else False
+                )
 
             if sink.name == Sinks.FILE.value:
                 opts = {
-                    'format': (sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value),
+                    'format': sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value,
                     'level': sink_opts.level.value,
-                    'filter': (sink_opts.filter if sink_opts.filter else None),
-                    'colorize': (sink_opts.colorize if sink_opts.colorize else False),
-                    'serialize': (sink_opts.serialize if sink_opts.serialize else True),
-                    'backtrace': (sink_opts.backtrace if sink_opts.backtrace else False),
-                    'diagnose': (sink_opts.diagnose if sink_opts.diagnose else False),
-                    'enqueue': (sink_opts.enqueue if sink_opts.enqueue else False),
-                    'catch': (sink_opts.catch if sink_opts.catch else False)
+                    'filter': sink_opts.filter if sink_opts.filter else None,
+                    'colorize': sink_opts.colorize if sink_opts.colorize else False,
+                    'serialize': sink_opts.serialize if sink_opts.serialize else True,
+                    'backtrace': sink_opts.backtrace if sink_opts.backtrace else False,
+                    'diagnose': sink_opts.diagnose if sink_opts.diagnose else False,
+                    'enqueue': sink_opts.enqueue if sink_opts.enqueue else False,
+                    'catch': sink_opts.catch if sink_opts.catch else False
                 }
 
                 if sink_opts.rotation:
@@ -214,15 +218,15 @@ class Logger:
         self.sink_topic = options.sink_topic
 
         opts = BaseSinkOptions(
-            format=(options.format if options.format else DefaultFormats.PLAIN_FORMAT.value),
+            format=options.format if options.format else DefaultFormats.PLAIN_FORMAT.value,
             level=options.level.value,
-            filter=(options.filter if options.filter else None),
-            colorize=(options.colorize if options.colorize else False),
-            serialize=(options.serialize if options.serialize else True),
-            backtrace=(options.backtrace if options.backtrace else False),
-            diagnose=(options.diagnose if options.diagnose else False),
-            enqueue=(options.enqueue if options.enqueue else False),
-            catch=(options.catch if options.catch else False)
+            filter=options.filter if options.filter else None,
+            colorize=options.colorize if options.colorize else False,
+            serialize=options.serialize if options.serialize else True,
+            backtrace=options.backtrace if options.backtrace else False,
+            diagnose=options.diagnose if options.diagnose else False,
+            enqueue=options.enqueue if options.enqueue else False,
+            catch=options.catch if options.catch else False
         )
 
         return Sink(name=Sinks.KAFKA,
