@@ -9,7 +9,7 @@ README = (ROOOT / "README.md").read_text()
 
 setup(
     name='loguru_logger_lite',
-    version="0.0.3",
+    version="0.0.4",
     author="Dmitry Amanov",
     author_email="",
     description="Simple loguru_logger_lite built on top of loguru to make a quick setup for basic logging",

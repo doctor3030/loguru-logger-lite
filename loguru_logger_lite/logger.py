@@ -181,7 +181,7 @@ class Logger:
                     catch=sink_opts.catch if sink_opts.catch else False
                 )
 
-            if sink.name == Sinks.FILE.value:
+            if sink.name == Sinks.FILE:
                 opts = {
                     'format': sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value,
                     'level': sink_opts.level.value,
