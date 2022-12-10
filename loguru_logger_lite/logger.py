@@ -94,7 +94,7 @@ class Logger:
             self.producer.close()
 
     def _log_kafka_sink(self, msg):
-        self.producer.send(self.sink_topic, value=msg.encode('utf-8'))
+        self.producer.send(self.sink_topic, value=msg)
 
     @staticmethod
     def _get_producer(bootstrap_servers: List[str], producer_config: Dict = None):
@@ -174,7 +174,7 @@ class Logger:
                     level=sink_opts.level.value,
                     filter=sink_opts.filter if sink_opts.filter else None,
                     colorize=sink_opts.colorize if sink_opts.colorize else False,
-                    serialize=sink_opts.serialize if sink_opts.serialize else True,
+                    serialize=sink_opts.serialize if sink_opts.serialize else False,
                     backtrace=sink_opts.backtrace if sink_opts.backtrace else False,
                     diagnose=sink_opts.diagnose if sink_opts.diagnose else False,
                     enqueue=sink_opts.enqueue if sink_opts.enqueue else False,
@@ -187,7 +187,7 @@ class Logger:
                     'level': sink_opts.level.value,
                     'filter': sink_opts.filter if sink_opts.filter else None,
                     'colorize': sink_opts.colorize if sink_opts.colorize else False,
-                    'serialize': sink_opts.serialize if sink_opts.serialize else True,
+                    'serialize': sink_opts.serialize if sink_opts.serialize else False,
                     'backtrace': sink_opts.backtrace if sink_opts.backtrace else False,
                     'diagnose': sink_opts.diagnose if sink_opts.diagnose else False,
                     'enqueue': sink_opts.enqueue if sink_opts.enqueue else False,
@@ -222,7 +222,7 @@ class Logger:
             level=options.level.value,
             filter=options.filter if options.filter else None,
             colorize=options.colorize if options.colorize else False,
-            serialize=options.serialize if options.serialize else True,
+            serialize=options.serialize if options.serialize else False,
             backtrace=options.backtrace if options.backtrace else False,
             diagnose=options.diagnose if options.diagnose else False,
             enqueue=options.enqueue if options.enqueue else False,

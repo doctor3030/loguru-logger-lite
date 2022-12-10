@@ -4,15 +4,28 @@ from unittest import TestCase
 import json
 from kafka import KafkaConsumer
 from loguru import logger as loguru_base
+from dateutil import parser
 
 sys.path.append('../')
 from loguru_logger_lite import Logger, LogLevels, Sink, Sinks, \
     BaseSinkOptions, KafkaSinkOptions, FileSinkOptions
 
 
-class TestLogger(TestCase):
+def kafka_value_serializer(data):
+    formatted = {
+        'module': data.split('|')[0].split(':')[1].strip(),
+        'component': data.split('|')[1].split(':')[1].strip(),
+        'pid': data.split('|')[2].split(':')[1].strip(),
+        'level': data.split('|')[3].strip(),
+        'timestamp': str(parser.parse(data.split('|')[4].strip()).timestamp() * 1000),
+        'message': data.split('|')[5].strip(),
+    }
+    return json.dumps(formatted).encode('utf-8')
 
-    kafka_bootstrap_servers = ['10.0.0.74:9092']
+
+class TestLogger(TestCase):
+    kafka_bootstrap_servers = ['127.0.0.1:29092']
+
     # kafka_bootstrap_servers = ['192.168.2.190:9092']
 
     def test_default_logger(self):
@@ -45,7 +58,7 @@ class TestLogger(TestCase):
         path = './test.log'
         sinks = [
             Sink(name=Sinks.FILE,
-                 opts=FileSinkOptions(path=path, level=LogLevels.TRACE))
+                 opts=FileSinkOptions(path=path, level=LogLevels.TRACE, serialize=False))
         ]
 
         logger = Logger.get_logger(sinks)
@@ -72,9 +85,15 @@ class TestLogger(TestCase):
 
         sinks = [
             Sink(name=Sinks.KAFKA,
-                 opts=KafkaSinkOptions(level=LogLevels.TRACE,
-                                       bootstrap_servers=consumer_config['bootstrap_servers'],
-                                       sink_topic=topic))
+                 opts=KafkaSinkOptions(
+                     level=LogLevels.TRACE,
+                     # serialize=False,
+                     bootstrap_servers=consumer_config['bootstrap_servers'],
+                     sink_topic=topic,
+                     producer_config={
+                         "value_serializer": kafka_value_serializer,
+                     }
+                 ))
         ]
 
         logger = Logger.get_logger(sinks)
@@ -96,7 +115,8 @@ class TestLogger(TestCase):
             for partition_batch in message_batch.values():
                 for message in partition_batch:
                     val = message.value
-                    print(val['text'])
+                    # print(val['text'])
+                    print(val)
             consumer.commit()
 
             if time.time() - start > 5:
@@ -120,7 +140,12 @@ class TestLogger(TestCase):
         kafka_sink = Logger.get_kafka_sink(options=KafkaSinkOptions(
             level=LogLevels.TRACE,
             bootstrap_servers=consumer_config['bootstrap_servers'],
-            sink_topic=topic)
+            sink_topic=topic,
+            producer_config={
+                "value_serializer": kafka_value_serializer,
+            }
+        ),
+
         )
 
         logger = loguru_base
@@ -144,7 +169,8 @@ class TestLogger(TestCase):
             for partition_batch in message_batch.values():
                 for message in partition_batch:
                     val = message.value
-                    print(val['text'])
+                    # print(val['text'])
+                    print(val)
             consumer.commit()
 
             if time.time() - start > 5:
