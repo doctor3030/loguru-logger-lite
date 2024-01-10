@@ -39,38 +39,38 @@ class DefaultFormats(enum.Enum):
 
 
 class BaseSinkOptions(pydantic.BaseModel):
-    level: LogLevels
-    format: Optional[str]
-    filter: Optional[Union[str, Callable[[TypedDict], bool], Dict[Union[str, None], Union[str, int, bool]]]]
-    colorize: Optional[bool]
-    serialize: Optional[bool]
-    backtrace: Optional[bool]
-    diagnose: Optional[bool]
-    enqueue: Optional[bool]
-    catch: Optional[bool]
+    level: int
+    format: Optional[str] = None
+    filter: Optional[Union[str, Callable[[TypedDict], bool], Dict[Union[str, None], Union[str, int, bool]]]] = None
+    colorize: Optional[bool] = None
+    serialize: Optional[bool] = None
+    backtrace: Optional[bool] = None
+    diagnose: Optional[bool] = None
+    enqueue: Optional[bool] = None
+    catch: Optional[bool] = None
 
 
 class KafkaSinkOptions(BaseSinkOptions):
     bootstrap_servers: List[str]
-    producer_config: Optional[Dict]
+    producer_config: Optional[Dict] = None
     sink_topic: str
 
 
 class FileSinkOptions(BaseSinkOptions):
     path: str
-    rotation: Optional[Union[str, int, time, timedelta, Callable[[Message, TextIO], bool]]]
-    retention: Optional[Union[str, int, timedelta, Callable[[List[str]], None]]]
-    compression: Optional[Union[str, Callable[[str], None]]]
-    delay: Optional[bool]
-    mode: Optional[str]
-    buffering: Optional[int]
-    encoding: Optional[str]
+    rotation: Optional[Union[str, int, time, timedelta, Callable[[Message, TextIO], bool]]] = None
+    retention: Optional[Union[str, int, timedelta, Callable[[List[str]], None]]] = None
+    compression: Optional[Union[str, Callable[[str], None]]] = None
+    delay: Optional[bool] = None
+    mode: Optional[str] = None
+    buffering: Optional[int] = None
+    encoding: Optional[str] = None
 
 
 class Sink(pydantic.BaseModel):
     name: Sinks
     opts: Union[BaseSinkOptions, KafkaSinkOptions, FileSinkOptions]
-    sink: Optional[Union[TextIO, Callable[[Message], None], Handler, Callable[[Message], Awaitable[None]], str]]
+    sink: Optional[Union[TextIO, Callable[[Message], None], Handler, Callable[[Message], Awaitable[None]], str]] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -78,7 +78,7 @@ class Sink(pydantic.BaseModel):
 
 class Logger:
 
-    def __init__(self, sinks: Optional[List[Sink]]):
+    def __init__(self, sinks: Optional[List[Sink]] = None):
         self.producer = None
         self.sink_topic = None
 
@@ -143,7 +143,7 @@ class Logger:
             sink_opts = sink.opts
             if sink.name == Sinks.STDOUT:
                 logger.add(sys.stdout,
-                           level=sink_opts.level.value,
+                           level=sink_opts.level,
                            format=(sink_opts.format if sink_opts.format else DefaultFormats.STDOUT_FORMAT.value[0]),
                            filter=(sink_opts.filter if sink_opts.filter else None),
                            colorize=(sink_opts.colorize if sink_opts.colorize else True),
@@ -157,7 +157,7 @@ class Logger:
                 logger.add(
                     sys.stderr,
                     format=sink_opts.format if sink_opts.format else DefaultFormats.STDERR_FORMAT.value[0],
-                    level=sink_opts.level.value,
+                    level=sink_opts.level,
                     filter=sink_opts.filter if sink_opts.filter else None,
                     colorize=sink_opts.colorize if sink_opts.colorize else True,
                     serialize=sink_opts.serialize if sink_opts.serialize else False,
@@ -171,7 +171,7 @@ class Logger:
                 logger.add(
                     self._log_kafka_sink,
                     format=sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value,
-                    level=sink_opts.level.value,
+                    level=sink_opts.level,
                     filter=sink_opts.filter if sink_opts.filter else None,
                     colorize=sink_opts.colorize if sink_opts.colorize else False,
                     serialize=sink_opts.serialize if sink_opts.serialize else False,
@@ -184,7 +184,7 @@ class Logger:
             if sink.name == Sinks.FILE:
                 opts = {
                     'format': sink_opts.format if sink_opts.format else DefaultFormats.PLAIN_FORMAT.value,
-                    'level': sink_opts.level.value,
+                    'level': sink_opts.level,
                     'filter': sink_opts.filter if sink_opts.filter else None,
                     'colorize': sink_opts.colorize if sink_opts.colorize else False,
                     'serialize': sink_opts.serialize if sink_opts.serialize else False,
@@ -219,7 +219,7 @@ class Logger:
 
         opts = BaseSinkOptions(
             format=options.format if options.format else DefaultFormats.PLAIN_FORMAT.value,
-            level=options.level.value,
+            level=options.level,
             filter=options.filter if options.filter else None,
             colorize=options.colorize if options.colorize else False,
             serialize=options.serialize if options.serialize else False,

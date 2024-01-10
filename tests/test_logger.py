@@ -42,7 +42,7 @@ class TestLogger(TestCase):
         print('\nTESTING TEXTIO LOGGER')
         sinks = [
             Sink(name=Sinks.STDOUT,
-                 opts=BaseSinkOptions(level=LogLevels.TRACE))
+                 opts=BaseSinkOptions(level=LogLevels.TRACE.value))
         ]
 
         logger = Logger.get_logger(sinks)
@@ -58,7 +58,7 @@ class TestLogger(TestCase):
         path = './test.log'
         sinks = [
             Sink(name=Sinks.FILE,
-                 opts=FileSinkOptions(path=path, level=LogLevels.TRACE, serialize=False))
+                 opts=FileSinkOptions(path=path, level=LogLevels.TRACE.value, serialize=False))
         ]
 
         logger = Logger.get_logger(sinks)
@@ -86,7 +86,7 @@ class TestLogger(TestCase):
         sinks = [
             Sink(name=Sinks.KAFKA,
                  opts=KafkaSinkOptions(
-                     level=LogLevels.TRACE,
+                     level=LogLevels.TRACE.value,
                      # serialize=False,
                      bootstrap_servers=consumer_config['bootstrap_servers'],
                      sink_topic=topic,
@@ -138,7 +138,7 @@ class TestLogger(TestCase):
         topic = 'test_topic'
 
         kafka_sink = Logger.get_kafka_sink(options=KafkaSinkOptions(
-            level=LogLevels.TRACE,
+            level=LogLevels.TRACE.value,
             bootstrap_servers=consumer_config['bootstrap_servers'],
             sink_topic=topic,
             producer_config={
@@ -149,7 +149,7 @@ class TestLogger(TestCase):
         )
 
         logger = loguru_base
-        logger.add(kafka_sink.sink, **json.loads(kafka_sink.opts.json(exclude_unset=True)))
+        logger.add(kafka_sink.sink, **kafka_sink.opts.model_dump(exclude_unset=True))
 
         consumer = KafkaConsumer(**consumer_config)
         consumer.subscribe(topics=[topic])
