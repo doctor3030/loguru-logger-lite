@@ -9,7 +9,7 @@ README = (ROOOT / "README.md").read_text()
 
 setup(
     name='loguru_logger_lite',
-    version="0.0.8",
+    version="0.0.9",
     author="Dmitry Amanov",
     author_email="",
     description="Simple loguru_logger_lite built on top of loguru to make a quick setup for basic logging",
@@ -26,6 +26,6 @@ setup(
     install_requires=[
         "pydantic~=2.11.0",
         "loguru~=0.7.3",
-        "kafka-python~=2.1.5"
+        "kafka-python~=2.0.6"
     ]
 )
